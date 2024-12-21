@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Graph: Velocity and Acceleration Fields</title>
+    <script src="https://cdn.plot.ly/plotly-2.16.1.min.js"></script>
+    <style>
+        #graph-container {
+            width: 100%;
+            height: 500px;
+        }
+        .slider-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .slider-container label {
+            font-size: 1.2em;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Interactive Graph: Velocity and Acceleration Fields</h1>
+    <div id="graph-container"></div>
+
+    <div class="slider-container">
+        <label for="time-slider">Time (t): </label>
+        <input type="range" id="time-slider" min="0" max="10" step="0.1" value="0" oninput="updateGraph(this.value)">
+        <span id="time-value">0</span>
+    </div>
+
+    <div class="slider-container">
+        <button id="play-pause-btn" onclick="toggleAnimation()">Play</button>
+        <button id="export-btn" onclick="exportGraph()">Export Graph</button>
+    </div>
+
+    <div class="slider-container">
+        <label for="min-time">Min Time:</label>
+        <input type="number" id="min-time" value="0" onchange="updateSliderRange()">
+        <label for="max-time">Max Time:</label>
+        <input type="number" id="max-time" value="10" onchange="updateSliderRange()">
+    </div>
+
+    <div class="slider-container">
+        <label for="position-color">Position Color:</label>
+        <input type="color" id="position-color" value="#0000FF" onchange="changeColor('position', this.value)">
+        <label for="velocity-color">Velocity Color:</label>
+        <input type="color" id="velocity-color" value="#00FF00" onchange="changeColor('velocity', this.value)">
+        <label for="acceleration-color">Acceleration Color:</label>
+        <input type="color" id="acceleration-color" value="#FF0000" onchange="changeColor('acceleration', this.value)">
+    </div>
+
+    <script>
+        function generateData(time) {
+            const x = [];
+            const position = [];
+            const velocity = [];
+            const acceleration = [];
+
+            for (let i = 0; i <= 10; i += 0.1) {
+                x.push(i);
+                position.push(Math.sin(i - time));
+                velocity.push(Math.cos(i - time));
+                acceleration.push(-Math.sin(i - time));
+            }
+
+            return { x, position, velocity, acceleration };
+        }
+
+        function initGraph() {
+            const initialTime = 0;
+            const data = generateData(initialTime);
+
+            const traces = [
+                {
+                    x: data.x,
+                    y: data.position,
+                    mode: 'lines+markers',
+                    name: 'Position',
+                    line: { color: 'blue' },
+                    marker: { color: 'blue', size: 6 }
+                },
+                {
+                    x: data.x,
+                    y: data.velocity,
+                    mode: 'lines+markers',
+                    name: 'Velocity',
+                    line: { color: 'green' },
+                    marker: { color: 'green', size: 6 }
+                },
+                {
+                    x: data.x,
+                    y: data.acceleration,
+                    mode: 'lines+markers',
+                    name: 'Acceleration',
+                    line: { color: 'red' },
+                    marker: { color: 'red', size: 6 }
+                }
+            ];
+
+            const layout = {
+                title: 'Velocity and Acceleration Fields',
+                xaxis: { title: 'Position (x)' },
+                yaxis: { title: 'Value' },
+                legend: { orientation: 'h' }
+            };
+
+            Plotly.newPlot('graph-container', traces, layout);
+        }
+
+        function updateGraph(time) {
+            document.getElementById('time-value').textContent = time;
+            const data = generateData(parseFloat(time));
+
+            Plotly.restyle('graph-container', {
+                y: [data.position, data.velocity, data.acceleration]
+            });
+        }
+
+        let animationInterval;
+
+        function toggleAnimation() {
+            const btn = document.getElementById("play-pause-btn");
+            const slider = document.getElementById("time-slider");
+
+            if (btn.textContent === "Play") {
+                btn.textContent = "Pause";
+                animationInterval = setInterval(() => {
+                    if (parseFloat(slider.value) >= parseFloat(slider.max)) {
+                        slider.value = slider.min;
+                    } else {
+                        slider.value = parseFloat(slider.value) + parseFloat(slider.step);
+                    }
+                    updateGraph(slider.value);
+                }, 100);
+            } else {
+                btn.textContent = "Play";
+                clearInterval(animationInterval);
+            }
+        }
+
+        function exportGraph() {
+            Plotly.downloadImage('graph-container', { format: 'png', filename: 'velocity_acceleration_graph' });
+        }
+
+        function updateSliderRange() {
+            const minTime = document.getElementById("min-time").value;
+            const maxTime = document.getElementById("max-time").value;
+            const slider = document.getElementById("time-slider");
+
+            slider.min = minTime;
+            slider.max = maxTime;
+        }
+
+        function changeColor(traceName, color) {
+            const traceMap = { position: 0, velocity: 1, acceleration: 2 };
+            Plotly.restyle('graph-container', { 'line.color': color }, [traceMap[traceName]]);
+        }
+
+        initGraph();
+    </script>
+</body>
+</html>
